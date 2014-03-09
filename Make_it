@@ -1,0 +1,2 @@
+rm avrbasic
+gcc main.c -o avrbasic
