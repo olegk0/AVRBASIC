@@ -120,7 +120,7 @@ int ExpPars6(void)
 			gp++;
 			o = pkey;
 			pkey = 0;
-			return 0;
+			return o;
 			break;
 		case RND:
 			gp++;
