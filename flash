@@ -1,0 +1,1 @@
+avrdude -p atmega328p -P usb -c usbasp    -U flash:w:main.hex

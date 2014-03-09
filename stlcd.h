@@ -58,6 +58,7 @@ void write_scrn(uint8_t x, uint8_t pg, uint8_t seg);
 
 #define LCDTWIDTH 21
 #define LCDTHEIGHT 8
+#define LCDSYMWIDTH 6
 
 #define swap(a, b) { uint8_t t = a; a = b; b = t; }
 void setpixel(uint8_t x, uint8_t y, uint8_t color);

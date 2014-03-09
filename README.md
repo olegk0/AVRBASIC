@@ -26,7 +26,7 @@ Restrictions:
 -------------
 *Maximum size of the program in 1200 bytes or 255 lines
 
-*Not create new files on SD, can only overwrite old. Therefore it is necessary to prepare empty files (example folder utils) and write them on a SD card.
+*Not create new files on SD, can only overwrite old. Therefore it is necessary to prepare template files (example folder utils) and write them on a SD card.
 
 *enter commands like Sinclair BASIC48
 

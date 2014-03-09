@@ -32,12 +32,16 @@ uint8_t GoLine(void)
 		{
 			*lp = 0;
 		    li = ExpPars1();//x
-			if(li>=0 && li< LCDTWIDTH)
-				xt=li;
+			if(li< LCDTWIDTH)
+				xt=li*LCDSYMWIDTH;
+			else
+				xt=(LCDTWIDTH-1)*LCDSYMWIDTH;
 			gp=lp+1;
 		    li = ExpPars1();//y
-			if(li>=0 && li< LCDTHEIGHT)
+			if(li< LCDTHEIGHT)
 				yt=li;
+			else
+				yt=LCDTHEIGHT-1;
 		}
 	    return(0);
 	case OUT:

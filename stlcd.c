@@ -138,7 +138,7 @@ void write_sym(uint8_t x, uint8_t line, uint8_t *buf)
 	st7565_command(CMD_SET_COLUMN_LOWER | (x & 0xf));
 	st7565_command(CMD_RMW);
     
-    for(c = 0; c < 6; c++) {
+    for(c = 0; c < LCDSYMWIDTH; c++) {
       st7565_data(buf[c]);
     }
 }
@@ -153,10 +153,10 @@ void write_scrn(uint8_t x, uint8_t line, uint8_t seg) {
 //************************************************************************
 
 void lputc(uint8_t c, uint8_t mode) {
-	uint8_t i, sym[6];
+	uint8_t i, sym[LCDSYMWIDTH];
 
 	if(c=='\r') clear_line(yt);//13
-	else if((xt+6) > LCDWIDTH || c=='\n') {//10
+	else if((xt+LCDSYMWIDTH) > LCDWIDTH || c=='\n') {//10
 		yt++;
 		gy++;
 		if(yt>=LCDTHEIGHT)
@@ -186,15 +186,15 @@ uart_put_dec(yt);*/
 	else
 		sym[i] = 0;
 	write_sym(xt, yt, sym);
-	xt=xt+6;
+	xt=xt+LCDSYMWIDTH;
 }
-
+/*
 void set_pos(uint8_t x, uint8_t line)//TODO
 {
 	xt =x;
 	yt=line;
 }
-
+*/
 //**********************************************************
 // the most basic function, set a single pixel
 void setpixel(uint8_t x, uint8_t y, uint8_t color) {
