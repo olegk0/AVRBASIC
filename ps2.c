@@ -33,7 +33,7 @@
 #define PS2_DATA		PD3
 
 static volatile uint8_t ps2_data,skip_next;						/* holds the received data */
-static volatile uint8_t edge, bitcount, rstfl;			 /* edge: 0 = neg.	1 = pos. */
+static volatile uint8_t edge, bitcount;			 /* edge: 0 = neg.	1 = pos. */
 static volatile uint8_t *in_ptr, *out_ptr;
 static volatile uint8_t ps2_buffcnt;
 static uint8_t ps2_buffer[PS2_BUFF_SIZE];
@@ -127,12 +127,18 @@ void ps2_clear_buffer(void)
  */
 void ps2_minit(void)
 {
+//cli();
+	EIMSK &= ~_BV(INT0);
 	EICRA |= _BV(ISC01);	/* INT0 interrupt on falling edge */
 	EICRA &= ~_BV(ISC00);
 	edge = 0;				/* 0 = falling edge  1 = rising edge */
 	bitcount = 11;
 	ps2_data = 0;
 	skip_next = FALSE;
+	ps2_clear_buffer();
+	EIFR = _BV(INTF0);
+	EIMSK |= _BV(INT0);
+//sei();
 }
 
 void ps2_init(void)
@@ -144,11 +150,10 @@ void ps2_init(void)
 	/* MS clock and data to low */
 	PS2_PORT  &= ~_BV(PS2_DATA);
 	PS2_PORT &= ~_BV(PS2_CLOCK);
-	ps2_minit();
-	ps2_clear_buffer();
+//	ps2_clear_buffer();
 	TIMSK2 |= _BV(TOIE2); /* allow timer2 overflow */
-	rstfl = 0;
-	EIMSK |= _BV(INT0);		/* enable irpt 0 */
+	ps2_minit();
+//	EIMSK |= _BV(INT0);		/* enable irpt 0 */
 
 }
 
@@ -206,10 +211,10 @@ static void ps2buf_put(uint8_t c)
 	}
 
 	*in_ptr++ = c;
-	ps2_buffcnt++;
 	// pointer wrapping
 	if (in_ptr >= ps2_buffer + PS2_BUFF_SIZE)
 		in_ptr = ps2_buffer;
+	ps2_buffcnt++;
 }
 
 uint8_t ps2buf_get(void)
@@ -272,11 +277,6 @@ ISR(TIMER2_OVF_vect)
 {
     TCCR2B = 0; /* stop timer2 and reset TCCR2 to indicate the overflow */
     TCNT2 = 0;
-/*	if(rstfl){//on the safe side
-		rstfl = 0;
-		ps2_minit();
-	}
-*/
 }
 
 
@@ -298,23 +298,15 @@ static uint8_t ps2_send_byte(uint8_t data)
 	/* MS clock and data to high */
 	PS2_DDR &= ~_BV(PS2_CLOCK);
 	PS2_DDR &= ~_BV(PS2_DATA);
-//	PS2_DATA_PORT  |= _BV(PS2_DATA);
-//	PS2_CLOCK_PORT |= _BV(PS2_CLOCK);
-	
-	/* MS clock and data as outputs */
-//	PS2_DATA_DDR  |= _BV(PS2_DATA);
-//	PS2_CLOCK_DDR |= _BV(PS2_CLOCK);
 
 	/* MS clock now to low */
 	PS2_DDR |= _BV(PS2_CLOCK);
-//	PS2_CLOCK_PORT &= ~_BV(PS2_CLOCK);
 
 	/* minimum delay between clock low and data low */
 	delay(120);
 
 	/* next MS data to low */
 	PS2_DDR  |= _BV(PS2_DATA);
-//	PS2_DATA_PORT &= ~_BV(PS2_DATA);
 
 	/* send start bit (just with this delay) */
 	delay(20);
@@ -333,7 +325,6 @@ static uint8_t ps2_send_byte(uint8_t data)
 
 		if (j<8) {
 			PS2_DDR = RESET_BIT(data, PS2_DDR, PS2_DATA);
-//			PS2_DATA_PORT = SET_BIT(data, PS2_DATA_PORT, PS2_DATA);
 			if (data & 0x01) {
 				parity ^= 0x01;
 			}
@@ -342,7 +333,6 @@ static uint8_t ps2_send_byte(uint8_t data)
 		} else if (j==8) {
 			/* insert parity */
 			PS2_DDR = RESET_BIT(~parity, PS2_DDR, PS2_DATA);
-//			PS2_DATA_PORT = SET_BIT(~parity, PS2_DATA_PORT, PS2_DATA);
 		} else if (j>8) {
 			/* MS clock and data as inputs again */
 			PS2_DDR &= ~_BV(PS2_DATA);
@@ -374,12 +364,12 @@ static uint8_t ps2_send_byte(uint8_t data)
 	PS2_DDR &= ~_BV(PS2_CLOCK);
 
 	/* clear interrupt flag bit (write a 1) to prevent ISR entry upon irpt enable */
-	EIFR = _BV(INTF0);
+//	EIFR = _BV(INTF0);
 
 	ps2_minit();
-	ps2_clear_buffer();
+//	ps2_clear_buffer();
 	/* enable ps2 irpt */
-	EIMSK |= _BV(INT0);
+//	EIMSK |= _BV(INT0);
 
 	/* stop timer */
 	t2_off();

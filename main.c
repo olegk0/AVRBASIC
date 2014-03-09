@@ -47,7 +47,7 @@ uint8_t CheckOvrPrint(void)
 
 int main(void)
 {
-	uint8_t cf,cp,ct;
+	uint8_t cf,cp;
 #ifdef AVR
 	wdt_reset();
 	wdt_disable();
@@ -75,21 +75,25 @@ int main(void)
 //programm loop
 	    PrgLineP = FirstPrgLine;
 	    cf = 1;
+		pkey = 0;
 	    while(PrgLineP){
-		if(cf<2){
-		    strcpy((char *)CmdInp,(const char *)(PrgLineP->line));
-		    CLine = PrgLineP->lnum;
-		}
+			cp = lgetc();
+			if(cp)
+				pkey = cp;
+			if(cf<2){
+			    strcpy((char *)CmdInp,(const char *)(PrgLineP->line));
+			    CLine = PrgLineP->lnum;
+			}
 
 //print f("Line:%d CMD:%s - %s\n",line,look_cname(CmdInp[0]),CmdInp + 1);
-		cf=GoLine();
-		if(!cf)
-		    PrgLineP = PrgLineP->next;
-		if(lgetc()==BREAK_KEY){
-			cf= EINTERUPT;
-			break;
-		}
-	    } /* end while line */
+			cf=GoLine();
+			if(!cf)
+			    PrgLineP = PrgLineP->next;
+			if(pkey==BREAK_KEY){
+				cf= EINTERUPT;
+				break;
+			}
+		} /* end while line */
 		lputint(CLine);
 	    break;
 	case LIST:

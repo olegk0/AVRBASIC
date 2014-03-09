@@ -42,6 +42,9 @@ uint8_t GoLine(void)
 				yt=li;
 			else
 				yt=LCDTHEIGHT-1;
+#ifdef AVR
+			st7565_command(CMD_SET_DISP_START_LINE | ((LCDTHEIGHT-1)*8)+8);
+#endif
 		}
 	    return(0);
 	case OUT:
@@ -77,6 +80,7 @@ uint8_t GoLine(void)
 		STOPPROG(EERROR);
 	    return(0);
 	case PRINT:
+		li = strlen(CmdInp);
 	    if(CmdInp[1] == '"'){
 		ReplaceChar(gp+1 ,'"', 0);
 		lputs((char *)(gp+1));
@@ -84,7 +88,8 @@ uint8_t GoLine(void)
 	    else{
 		lputint(ExpPars1());
 	    }
-	    lputchar('\n');
+		if(CmdInp[li-1]!=';')
+		    lputchar('\n');
 	    return(0);
 	case PAUSE:
 		bi = ExpPars1();

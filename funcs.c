@@ -560,6 +560,10 @@ up:
 					goto err;
 			}
 			break;
+		case NONEVAL://sym optional
+			lpc++;
+			cursmode = okVAL;
+			break;
 		case NOPVAL://num optional
 			cursmode = okVAL;
 		case NUMVAL://number

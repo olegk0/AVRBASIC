@@ -48,6 +48,7 @@ void clear_line(uint8_t pg)
 	for(c = 0; c < 128; c++) {
 		st7565_data(0);
 	}
+	st7565_command(CMD_RMW_CLEAR);
 	xt=0;
 }
 
@@ -141,6 +142,7 @@ void write_sym(uint8_t x, uint8_t line, uint8_t *buf)
     for(c = 0; c < LCDSYMWIDTH; c++) {
       st7565_data(buf[c]);
     }
+	st7565_command(CMD_RMW_CLEAR);
 }
 
 void write_scrn(uint8_t x, uint8_t line, uint8_t seg) {

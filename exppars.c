@@ -118,7 +118,9 @@ int ExpPars6(void)
 			break;
 		case INKEY:
 			gp++;
-			return lgetc();
+			o = pkey;
+			pkey = 0;
+			return 0;
 			break;
 		case RND:
 			gp++;

@@ -12,7 +12,7 @@
 #ifdef AVR
 #define MAXPRGSZ 1200 // max program size
 #define BMAX 30 //command buf 
-//#define volat volatile TODO
+#define volat volatile
 #define volat
 
 #else
@@ -149,7 +149,7 @@ const struct commands table_cmd[]
 PROGMEM
 #endif 
  = {
-  "PRINT", PRINT,{MLTVAL,END},//str,exp,mod
+  "PRINT", PRINT,{MLTVAL,NONEVAL,END},//str,exp,mod
   "INPUT", INPUT,{VARVAL,END},//var
   "IF", IF,{EXPVAL,THEN,CMDVAL,END},//required THEN
   "GOTO", GOTO,{EXPVAL,END},
@@ -165,7 +165,7 @@ PROGMEM
   "STOP", STOP,"",
   "PAUSE", PAUSE,{EXPVAL,END},
 
-  "HELP", HELP,{ALLVAL,END},
+  "HELP", HELP,{NONEVAL,END},
   "RUN", RUN,"",
   "MEM", MEM,"",
   "CLS", CLS,"",
@@ -307,7 +307,7 @@ volat uint8_t CLine;
 volat uint8_t pmode,cursmode;//console...program, cursor mode
 volat uint8_t keymode;//0-alt
 volat uint8_t *gp;
-volat uint8_t xt,yt,gy; 
+volat uint8_t xt,yt,gy,pkey; 
 
 volat uint8_t PrgSps[MAXPRGSZ] = {0,};//Program memory 
 

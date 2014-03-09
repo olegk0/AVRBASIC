@@ -16,6 +16,7 @@
 			CmdInp[0] = END;
 			cf = 0;
 			CLine = 0;
+			pmode = CONMODE;
 			cursmode = NONEVAL;
 			break;
 		case KBD_BS:
@@ -108,11 +109,11 @@
 							gp =NULL;
 							gy=0;
 #ifdef AVR
-							while(ct=pgm_read_byte(&(table_fn[gy].tok))){
+							while(pkey=pgm_read_byte(&(table_fn[gy].tok))){
 #else
-							while(ct=table_fn[gy].tok){
+							while(pkey=table_fn[gy].tok){
 #endif
-								if(ct == cp){
+								if(pkey == cp){
 									gp = (uint8_t *)(table_fn[gy].templ);
 									break;
 	  							}

@@ -200,10 +200,9 @@ uint8_t lgetc(void)
 	
 #ifdef AVR
 //	ch = (uint8_t)uart_getchar();
-	if(ps2_buffcnt)
+	ch=0;
+	while(ps2_buffcnt && !ch)
 		ch=ps2buf_get();
-	else
-		ch=0;
 
 	switch(ch){
 	case 'c':
@@ -240,7 +239,8 @@ uint8_t lgetchar(void)
 {
 	register uint8_t ch;
 #ifdef AVR
-	ps2_clear_buffer();
+//	ps2_clear_buffer();
+	ps2_minit();
 #else
 	keymode = 0;
 #endif
