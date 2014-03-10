@@ -234,7 +234,7 @@ PROGMEM
   'r',0			| PRGMODE, REM,
   'r',ALTKEY	| PRGMODE, RETURN,
   'r',0			| CONMODE, RUN,
-  's',0			| CONMODE | PRGMODE, SAVE,
+  's',0			| CONMODE, SAVE,
   's',ALTKEY	| PRGMODE, STOP,
 
   'i',0			| FNMODE, IN,

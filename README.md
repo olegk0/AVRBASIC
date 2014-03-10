@@ -26,9 +26,19 @@ Restrictions:
 -------------
 *Maximum size of the program in 1200 bytes or 255 lines
 
+*All variables only integer type (-32768...32768), variable name - one uppercase character in the range A to F
+
 *Not create new files on SD, can only overwrite old. Therefore it is necessary to prepare template files (example folder utils) and write them on a SD card.
 
 *enter commands like Sinclair BASIC48
+
+Shortkeys
+---------
+*ESC - Break / Clear command line  (Ctrl+B in Linux console)
+
+*CapsLock - switch keyboard layout Rus/Lat  (Rus(cp1251) only for text or remarks)
+
+not available yet//*Ctrl+C - Reset
 
 :Commands
 ---------

@@ -207,6 +207,7 @@ uint8_t lgetc(void)
 	switch(ch){
 	case 'c':
 		if(keymode&CTRL_FLG){//reset
+			wdt_reset();
 			wdt_enable(WDTO_120MS);
 			while(1);
 		}
@@ -239,8 +240,8 @@ uint8_t lgetchar(void)
 {
 	register uint8_t ch;
 #ifdef AVR
-//	ps2_clear_buffer();
-	ps2_minit();
+	ps2_clear_buffer();
+//	ps2_minit();
 #else
 	keymode = 0;
 #endif

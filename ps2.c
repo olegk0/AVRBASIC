@@ -128,16 +128,16 @@ void ps2_clear_buffer(void)
 void ps2_minit(void)
 {
 //cli();
-	EIMSK &= ~_BV(INT0);
+//	EIMSK &= ~_BV(INT0);
 	EICRA |= _BV(ISC01);	/* INT0 interrupt on falling edge */
 	EICRA &= ~_BV(ISC00);
 	edge = 0;				/* 0 = falling edge  1 = rising edge */
 	bitcount = 11;
 	ps2_data = 0;
-	skip_next = FALSE;
-	ps2_clear_buffer();
-	EIFR = _BV(INTF0);
-	EIMSK |= _BV(INT0);
+//	skip_next = FALSE;
+//	ps2_clear_buffer();
+//	EIFR = _BV(INTF0);
+//	EIMSK |= _BV(INT0);
 //sei();
 }
 
@@ -150,10 +150,11 @@ void ps2_init(void)
 	/* MS clock and data to low */
 	PS2_PORT  &= ~_BV(PS2_DATA);
 	PS2_PORT &= ~_BV(PS2_CLOCK);
-//	ps2_clear_buffer();
-	TIMSK2 |= _BV(TOIE2); /* allow timer2 overflow */
+	ps2_clear_buffer();
 	ps2_minit();
-//	EIMSK |= _BV(INT0);		/* enable irpt 0 */
+	skip_next = FALSE;
+	TIMSK2 |= _BV(TOIE2); /* allow timer2 overflow */
+	EIMSK |= _BV(INT0);		/* enable irpt 0 */
 
 }
 
@@ -206,7 +207,7 @@ static void ps2buf_put(uint8_t c)
 		skip_next = 0;
 		return;
 	}
-	if(c > 0x76){
+	if(c > 0x7F){
 		return;
 	}
 
@@ -247,7 +248,7 @@ uint8_t ps2buf_get(void)
 
 ISR(INT0_vect)
 {
-//		t2_on_512us();
+	t2_on_16ms()
 //		rstfl = 1;
 //cli();
 
@@ -271,12 +272,17 @@ ISR(INT0_vect)
 			}
 		}
 //sei();
+	t2_on_16ms()
 }
 
 ISR(TIMER2_OVF_vect)
 {
+cli();
     TCCR2B = 0; /* stop timer2 and reset TCCR2 to indicate the overflow */
     TCNT2 = 0;
+
+	ps2_minit();
+sei();
 }
 
 
@@ -364,12 +370,12 @@ static uint8_t ps2_send_byte(uint8_t data)
 	PS2_DDR &= ~_BV(PS2_CLOCK);
 
 	/* clear interrupt flag bit (write a 1) to prevent ISR entry upon irpt enable */
-//	EIFR = _BV(INTF0);
 
 	ps2_minit();
-//	ps2_clear_buffer();
+	ps2_clear_buffer();
+	EIFR = _BV(INTF0);
 	/* enable ps2 irpt */
-//	EIMSK |= _BV(INT0);
+	EIMSK |= _BV(INT0);
 
 	/* stop timer */
 	t2_off();
