@@ -124,7 +124,18 @@ int ExpPars6(void)
 			break;
 		case RND:
 			gp++;
-			return rand();
+			if(*gp == '('){
+				gp++;
+				o = ExpPars1();
+				if(o>0)
+					o = rand()/(SIZEOFVAR()/o);
+				else
+					o=0;
+				gp++;
+				return o;
+			}
+			else
+				return 0;
 			break;
 		default:
 			return 0;

@@ -54,7 +54,6 @@ int main(void)
 	TCCR1B = 1; //start timer1
 #endif
 	init();
-
 	lFputs(mtext);
 	lgetchar();
 #ifdef AVR

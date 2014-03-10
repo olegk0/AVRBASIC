@@ -188,7 +188,7 @@ PROGMEM
  = {
   "IN", IN,{NUMVAL,END},
   "INKEY", INKEY,"",
-  "RND", RND,"",
+  "RND", RND,{EXPVAL,END},
   "", END, ""
 };
 //**************************

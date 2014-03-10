@@ -26,7 +26,7 @@ Restrictions:
 -------------
 *Maximum size of the program in 1200 bytes or 255 lines
 
-*All variables only integer type (-32768...32768), variable name - one uppercase character in the range A to F
+*All variables only integer type (-32768...32768), variable name - one uppercase character in the range A to Z
 
 *Not create new files on SD, can only overwrite old. Therefore it is necessary to prepare template files (example folder utils) and write them on a SD card.
 
@@ -39,65 +39,6 @@ Shortkeys
 *CapsLock - switch keyboard layout Rus/Lat  (Rus(cp1251) only for text or remarks)
 
 not available yet//*Ctrl+C - Reset
-
-:Commands
----------
-b        BEEP E , E 
-
-c        CLS 
-
-c :Alt CLEAR 
-
-f        FOR V = E TO E 
-
-g :Alt GOSUB E 
-
-g        GOTO E 
-
-h        HELP A 
-
-i        IF E THEN C                                            
-
-i :Alt INPUT V 
-
-l        LET V = E 
-
-l :Alt LOCATE E , E 
-
-l        LIST n 
-
-l :Alt LOAD S 
-
-m        MEM 
-
-n        NEW
-
-n        NEXT V 
-
-o        OUT N , E 
-
-p :Alt PAUSE E 
-
-p        PRINT M 
-
-r        REM A 
-
-r :Alt RETURN 
-
-r        RUN                                                    
-
-s        SAVE S 
-
-s :Alt STOP
-
-:Functions
-----------
-i        IN N 
-
-i :Alt INKEY 
-
-r        RND 
-
 
 
 project folder
