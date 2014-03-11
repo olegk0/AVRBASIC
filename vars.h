@@ -3,14 +3,14 @@
 
 //***************Version************************
 #define MAJOR 0
-#define MINOR 1
+#define MINOR 2
 
 #define STRING(x) STR_HELPER(x)
 #define STR_HELPER(x) #x
 #define VERSION STRING(MAJOR) "." STRING(MINOR)
 //*****************************************
 #ifdef AVR
-#define MAXPRGSZ 1200 // max program size
+#define MAXPRGSZ 1400 // max program size
 #define BMAX 30 //command buf 
 #define volat volatile
 #define volat
@@ -30,7 +30,7 @@
 #define LMAX 10 //max "for" lops
 #define LNMAX 255 //max line num
 
-#define TOVAR(x) x-'A'
+#define TOVAR(x) (x-'A')
 #define SIZEOFVAR() (((0x1ULL << ((sizeof(int) * 8ULL) - 1ULL)) - 1ULL) | \
                     (0x7ULL << ((sizeof(int) * 8ULL) - 4ULL)))
 //*****************************************
@@ -127,8 +127,9 @@ PROGMEM
 #define BEEP	0xB9
 #define HELP	0xBA
 
-#define LOCATE	0xC0
+#define AT	0xC0
 #define OUT		0xC1
+//#define DIM		0xC2
 
 #define PRINT	0xE0
 #define INPUT	0xE1
@@ -159,11 +160,13 @@ PROGMEM
   "RETURN", RETURN,"",//none
   "REM", REM,{ALLVAL,END},//any syms
   "LET", LET,{VARVAL,'=',EXPVAL,END},
-  "LOCATE", LOCATE,{EXPVAL,',',EXPVAL,END},
+  "AT", AT,{EXPVAL,',',EXPVAL,END},
   "BEEP", BEEP,{EXPVAL,',',EXPVAL,END},
   "OUT", OUT,{NUMVAL,',',EXPVAL,END},
   "STOP", STOP,"",
   "PAUSE", PAUSE,{EXPVAL,END},
+//  "DIM", DIM,{'Z','('} STRING(VDMAX) {')',END},
+//  "DIM", DIM,"Z(" STRING(VDMAX) ")\0",
 
   "HELP", HELP,{NONEVAL,END},
   "RUN", RUN,"",
@@ -212,9 +215,11 @@ const struct keys table_key[]
 PROGMEM
 #endif 
  = {
+  'a',0			| PRGMODE, AT,
   'b',0			| PRGMODE, BEEP,
   'c',0			| CONMODE | PRGMODE, CLS,
   'c',ALTKEY 	| CONMODE, CLEAR,
+//  'd',0			| PRGMODE, DIM,
   'f',0			| PRGMODE, FOR,
   'g',ALTKEY	| PRGMODE, GOSUB,
   'g',0			| PRGMODE, GOTO,
@@ -222,10 +227,9 @@ PROGMEM
   'i',0			| PRGMODE, IF,
   'i',ALTKEY	| PRGMODE, INPUT,
   'l',0			| PRGMODE, LET,
-  'l',ALTKEY	| PRGMODE, LOCATE,
   'l',0			| CONMODE, LIST,
   'l',ALTKEY	| CONMODE | PRGMODE, LOAD,
-  'm',0			| CONMODE | PRGMODE, MEM,
+  'm',0			| CONMODE, MEM,
   'n',0			| CONMODE, NEW,
   'n',0			| PRGMODE, NEXT,
   'o',0			| PRGMODE, OUT,
@@ -294,10 +298,10 @@ struct plines {
 };
 
 volat struct loopvar LoopVar[LMAX];
-volat int Vars[VMAX]; /* program variable value */
-volat struct plines *SubStack[SMAX]; /* subroutine stack */
-volat uint8_t SubStackP; /* subroutine stack pointer */
-volat uint8_t CmdInp[BMAX+1]; /* command input buffer */
+volat int Vars[VMAX]; // program variables
+volat struct plines *SubStack[SMAX]; // subroutine stack
+volat uint8_t SubStackP; // subroutine stack pointer
+volat uint8_t CmdInp[BMAX+1]; // command input buffer
 //***********************************************
 volat struct plines *FirstPrgLine=NULL;//always on first line
 volat struct plines *PrgLineP=NULL;//float poiner

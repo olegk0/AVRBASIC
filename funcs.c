@@ -501,7 +501,7 @@ up:
 	lc = ch;
 	while(*cline && ch){
 //printf("\n--%c\n",*cline);
-		if(ch == MLTVAL){//str,mod-fn,exp(num,var){
+		if(ch == MLTVAL){//str,mod-fn,exp(num,var)
 			if(lc != STRVAL && lc != CMDVAL && lc != EXPVAL){
 				if(*cline == '"')//str
 					lc = STRVAL;
@@ -510,9 +510,27 @@ up:
 				else//expression 
 					lc = EXPVAL;
 			}
-		} else	lc = ch;
+		} else if(ch == VARVAL){
+			if(lc != EXPVAL){
+				if(*cline == '('){
+					lc = EXPVAL;
+//					cursmode = EXPVAL;
+				}
+				else if(cursmode == okVAL){
+					lc = 255;
+					lpc++;
+					cline--;
+				}
+				else
+					lc = ch;
 
+			}
+
+		} else	lc = ch;
+//printf("\n%c %c %c %c %c\n",ch,lc,*lpc,*cline,cursmode);
 		switch(lc){
+		case 255:
+			break;
 		case CMDVAL://command
 			if(!SYMISCMD(*cline))
 				goto err;
@@ -526,11 +544,11 @@ up:
 		case VARVAL://variable
 			if(!SYMISVAR(*cline))
 				goto err;
-			lpc++;
+//			lpc++;
 			cursmode = okVAL;
 			break;
 		case EXPVAL://expression
-			if(SymIsExp(*cline)){
+			if(SymIsExp(*cline)&& !(*cline == '=' && ch == VARVAL)){
 				if(*cline == '(')
 					qc++;
 				else if(*cline == ')')

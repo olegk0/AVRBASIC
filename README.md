@@ -5,7 +5,7 @@ BASIC interpreter for atmega328 (Arduino)
 
 Warning! WIP(Work In Progress) status
 -------------------------------------
-build for AVR - make
+build for AVR - make or use WinAVR
 
 for linux console - Make_it
 
@@ -28,9 +28,12 @@ Restrictions:
 
 *All variables only integer type (-32768...32768), variable name - one uppercase character in the range A to Z
 
+*For a loop must use variables A to J
+
+*Is possible address to variable as an array, for example: A(0) is equivalent to A, A(1) - B, B(2) - D, etc.
+
 *Not create new files on SD, can only overwrite old. Therefore it is necessary to prepare template files (example folder utils) and write them on a SD card.
 
-*enter commands like Sinclair BASIC48
 
 Shortkeys
 ---------

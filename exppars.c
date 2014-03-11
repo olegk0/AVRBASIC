@@ -101,6 +101,7 @@ int ExpPars5(void)
 int ExpPars6(void)
 {
     int o;
+	uint8_t t;
 //printf("\n*6*%d\n",*gp);
 
 	if(SYMISFN(*gp)){
@@ -153,13 +154,20 @@ int ExpPars6(void)
 		gp++;
 		return o;
 	}
+	else if(SYMISVAR(*gp)){
+		t = *gp;
+		gp++;
+		if(*gp == '('){//array
+			gp++;
+			o=ExpPars1();
+			gp++;
+			if((o+t)<='Z')
+				return Vars[TOVAR(t+o)];
+		}
+//printf("\n+%c %d %d\n",t,TOVAR(t),Vars[TOVAR(t)]);
+		return Vars[TOVAR(t)];
+	}
 	else
-		return Vars[TOVAR(*gp++)];
-/*
-    return((*gp == '-') ? (gp++, -ExpPars6()):
-	    SYMISNUM(*gp) ? strtol((const char *)gp, &gp, 0):
-	    (*gp == '(') ? (gp++, o=ExpPars1(),gp++,o):
-	    Vars[TOVAR(*gp++)]);
-*/
+		return 0;
 }
 

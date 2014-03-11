@@ -68,6 +68,7 @@ int main(void)
 
 	gotocmdline();
 	cf=0;
+	if(!CLine || CmdInp[0] == 0){
 	switch((uint8_t)CmdInp[0]){
 	case RUN:
 	    ResetEnv();
@@ -195,12 +196,12 @@ int main(void)
 		FreePrg();
 		ReplaceChar(CmdInp+2, '"', 0);
 		cf=loadprg((const char *)(CmdInp+2));
-//		cf=loadprg("lander.pbs");
 	    break ;
 	case 0://cmd line empty
 		DelPrgLine(CLine);
 		break;
-	default:
+	}
+	}else{
 		LoadPrgLine(CLine);
 	    print_code(NULL,0);
 		lputchar('\n');

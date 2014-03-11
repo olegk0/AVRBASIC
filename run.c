@@ -8,6 +8,7 @@ uint8_t GoLine(void)
 	register uint8_t *lp;
 	register uint16_t bi;
 //printf("\n#%d:%s\n",CLine,CmdInp);
+//printf("\n*lnum=%d A=%d\n",CLine,Vars[0]);
 	gp = CmdInp + 1;
 	switch(CmdInp[0]){
 	case STOP:
@@ -23,10 +24,19 @@ uint8_t GoLine(void)
 		}
 	    return(0);
 	case LET:
-	    gp+=2;
-	    Vars[TOVAR(CmdInp[1])] = ExpPars1();
+		lp = findchar(CmdInp, '=');
+		li = CmdInp[1];
+		if(*(lp-1) == ')'){
+			*lp = 0;
+			gp = CmdInp+2;// '('
+		    li += ExpPars1();
+			if(li>'Z')
+				li = CmdInp[1];
+		}
+		gp = lp+1;
+	    Vars[TOVAR(li)] = ExpPars1();
 	    return(0);
-	case LOCATE:
+	case AT:
 		lp = findchar(CmdInp, ',');
 		if(lp)
 		{
@@ -59,8 +69,20 @@ uint8_t GoLine(void)
 	    return(0);
 	case REM:
 	    return(0);
+	case LOAD:
+		FreePrg();
+		ReplaceChar(CmdInp+2, '"', 0);
+		loadprg((const char *)(CmdInp+2));
+		PrgLineP = FirstPrgLine;
+		return(1);
 	case INPUT:
-	    li = *gp;
+		li = CmdInp[1];
+		if(CmdInp[2] == '('){
+			gp = CmdInp+2;// '('
+		    li += ExpPars1();
+			if(li>'Z')
+				li = CmdInp[1];
+		}
 		lgets(CmdInp);
 		if(CmdInp[0]==BREAK_KEY)
 			STOPPROG(EINTERUPT);
@@ -122,22 +144,25 @@ uint8_t GoLine(void)
 	case FOR : /* "FOR" */
 	    lp = findchar(CmdInp, TO);
 	    if(lp){
-		*lp = 0; /* "TO" */
-		gp = CmdInp+ 3;
-		li = TOVAR(CmdInp[1]);
-		Vars[li] = ExpPars1();
-		gp = lp + 1;
-		LoopVar[li].var_to = ExpPars1();
-		LoopVar[li].line_begin = PrgLineP->next;
+			*lp = 0; /* "TO" */
+			gp = CmdInp+ 3;
+			li = TOVAR(CmdInp[1]);
+			if(li>LMAX)
+				STOPPROG(ELOPSOVF);
+			Vars[li] = ExpPars1();
+			gp = lp + 1;
+			LoopVar[li].var_to = ExpPars1();
+			LoopVar[li].line_begin = PrgLineP->next;
 	    }else
-		STOPPROG(EERROR);
+			STOPPROG(EERROR);
 	    return(0);
 	case NEXT: /* "NEXT" */
 	    li = TOVAR(CmdInp[1]);
 	    if(++Vars[li] <= LoopVar[li].var_to){
-		PrgLineP = LoopVar[li].line_begin;
-		return(1);
+			PrgLineP = LoopVar[li].line_begin;
+			return(1);
 	    }
+		break;
 	}
 	return(0);
 }
