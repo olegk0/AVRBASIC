@@ -24,7 +24,7 @@ Hardware:
 
 Restrictions:
 -------------
-*Maximum size of the program in 1200 bytes or 255 lines
+*Maximum size of the program in 1400 bytes or 255 lines
 
 *All variables only integer type (-32768...32768), variable name - one uppercase character in the range A to Z
 
