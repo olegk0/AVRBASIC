@@ -3,7 +3,7 @@
 
 //***************Version************************
 #define MAJOR 0
-#define MINOR 2
+#define MINOR 3
 
 #define STRING(x) STR_HELPER(x)
 #define STR_HELPER(x) #x
@@ -14,7 +14,6 @@
 #define BMAX 30 //command buf 
 #define volat volatile
 #define volat
-
 #else
 
 #define BMAX 30 //command buf 
@@ -23,6 +22,8 @@
 #define volat
 
 #endif
+
+#define MAXBMEMSIZE 126
 //******************************************
 #define VMAX 'Z'-'A'+1 //variables  +150b
 #define SMAX 10 //gosub stack
@@ -45,20 +46,21 @@ PROGMEM
 
 //************************************************
 
-enum{
-	NONEVAL='?',//?
-	CMDVAL='C',//C - command
-	EXPVAL='E',//E - expression
-	ERRVAL='F',//F - fault
-	NUMVAL='N',//N - number
-	STRVAL='S',//S - string
-	VARVAL='V',//V - variable
-	MLTVAL='M',//M - multi val
-	OKVAL='O',//O all ok
+typedef enum {
+	NONEVAL='?',// one symbol
+	CMDVAL='C',// command
+	EXPVAL='E',// expression
+	ERRVAL='F',// fault
+	NUMVAL='N',// number
+	STRVAL='S',// string
+	AVARVAL='V',// variable include array
+	VARVAL='v',// variable
+	MLTVAL='M',// multi val
+	OKVAL='O',// all ok
 	okVAL='o',// exp ok
 	ALLVAL='A',//any syms
 	NOPVAL='n',//num optional
-};
+}CURSTATT;
 //*********************************************
 
 #define TO			0x10
@@ -103,6 +105,11 @@ struct commands {
 #define SYMISFN(sym)	((sym)>=0xF0)
 #define SYMISVAR(sym)	((sym)>='A' && (sym)<='Z')
 
+#define SIGNEDWORD		'i'
+#define UNSIGNEDWORD	'w'
+#define SIGNEDBYTE		'c'
+#define UNSIGNEDBYTE	'b'
+
 const uint8_t exp_syms[]
 #ifdef AVR
 PROGMEM
@@ -119,6 +126,7 @@ PROGMEM
 #define LIST	0xB1
 #define NEW		0xB2
 #define LOAD	0xB3
+#define RENUM	0xB4
 
 #define SAVE	0xB5
 #define MEM		0xB6
@@ -127,9 +135,9 @@ PROGMEM
 #define BEEP	0xB9
 #define HELP	0xBA
 
-#define AT	0xC0
+#define AT		0xC0
 #define OUT		0xC1
-//#define DIM		0xC2
+#define DIM		0xC2
 
 #define PRINT	0xE0
 #define INPUT	0xE1
@@ -151,7 +159,7 @@ PROGMEM
 #endif 
  = {
   "PRINT", PRINT,{MLTVAL,NONEVAL,END},//str,exp,mod
-  "INPUT", INPUT,{VARVAL,END},//var
+  "INPUT", INPUT,{AVARVAL,END},//var
   "IF", IF,{EXPVAL,THEN,CMDVAL,END},//required THEN
   "GOTO", GOTO,{EXPVAL,END},
   "FOR", FOR,{VARVAL,'=',EXPVAL,TO,EXPVAL,END},
@@ -159,15 +167,15 @@ PROGMEM
   "GOSUB", GOSUB,{EXPVAL,END},
   "RETURN", RETURN,"",//none
   "REM", REM,{ALLVAL,END},//any syms
-  "LET", LET,{VARVAL,'=',EXPVAL,END},
+  "LET", LET,{AVARVAL,'=',EXPVAL,END},
   "AT", AT,{EXPVAL,',',EXPVAL,END},
   "BEEP", BEEP,{EXPVAL,',',EXPVAL,END},
   "OUT", OUT,{NUMVAL,',',EXPVAL,END},
   "STOP", STOP,"",
   "PAUSE", PAUSE,{EXPVAL,END},
-//  "DIM", DIM,{'Z','('} STRING(VDMAX) {')',END},
-//  "DIM", DIM,"Z(" STRING(VDMAX) ")\0",
+  "DIM", DIM,{NONEVAL,VARVAL,'(',NUMVAL,')',END},
 
+  "RENUM", RENUM,{NUMVAL,',',NUMVAL,END},
   "HELP", HELP,{NONEVAL,END},
   "RUN", RUN,"",
   "MEM", MEM,"",
@@ -219,7 +227,7 @@ PROGMEM
   'b',0			| PRGMODE, BEEP,
   'c',0			| CONMODE | PRGMODE, CLS,
   'c',ALTKEY 	| CONMODE, CLEAR,
-//  'd',0			| PRGMODE, DIM,
+  'd',0			| PRGMODE, DIM,
   'f',0			| PRGMODE, FOR,
   'g',ALTKEY	| PRGMODE, GOSUB,
   'g',0			| PRGMODE, GOTO,
@@ -238,6 +246,7 @@ PROGMEM
   'r',0			| PRGMODE, REM,
   'r',ALTKEY	| PRGMODE, RETURN,
   'r',0			| CONMODE, RUN,
+  'r',ALTKEY	| CONMODE, RENUM,
   's',0			| CONMODE, SAVE,
   's',ALTKEY	| PRGMODE, STOP,
 
@@ -248,7 +257,7 @@ PROGMEM
 };
 
 //**************************
-enum {
+typedef enum {
 	EOK=0,
 	EERROR=1,
 	EALLOC=2,
@@ -263,7 +272,7 @@ enum {
 	EFUNCS=11,
 	ESTOP=12,
 	EALT=13,
-};
+}ETXTST;
 
 const uint8_t table_errc[][20]
 #ifdef AVR
@@ -308,10 +317,11 @@ volat struct plines *PrgLineP=NULL;//float poiner
 volat uint8_t CLine;
 //*****************************************
 //volatile int gi;
-volat uint8_t pmode,cursmode;//console...program, cursor mode
-volat uint8_t keymode;//0-alt
-volat uint8_t *gp;
-volat uint8_t xt,yt,gy,pkey; 
+volat uint8_t pmode;//console...program
+volat CURSTATT cursmode;//cursor mode
+volat uint8_t keymode,pkey;//0-alt
+volat uint8_t *Gp, *LlP;
+volat uint8_t xt,yt,gy; 
 
 volat uint8_t PrgSps[MAXPRGSZ] = {0,};//Program memory 
 

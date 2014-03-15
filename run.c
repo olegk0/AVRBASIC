@@ -6,10 +6,10 @@ uint8_t GoLine(void)
 {
 	register uint8_t li;
 	register uint8_t *lp;
-	register uint16_t bi;
+	register unsigned int bi;
 //printf("\n#%d:%s\n",CLine,CmdInp);
 //printf("\n*lnum=%d A=%d\n",CLine,Vars[0]);
-	gp = CmdInp + 1;
+	Gp = CmdInp + 1;
 	switch(CmdInp[0]){
 	case STOP:
 		STOPPROG(ESTOP);
@@ -19,22 +19,66 @@ uint8_t GoLine(void)
 		{
 			*lp = 0;
 		    bi = ExpPars1();
-			gp=lp+1;
+			Gp=lp+1;
 			Beep(bi,ExpPars1());
 		}
 	    return(0);
+	case DIM:
+		Gp+=2;//(
+	    li = ExpPars1();
+		if(CmdInp[1] != SIGNEDBYTE && CmdInp[1] != UNSIGNEDBYTE)//type of array
+			li = li << 1;//two byte on item
+		if(li <= (MAXBMEMSIZE-1)){
+/*			lp = Vars[TOVAR(CmdInp[1])];
+			if(lp > FirstPrgLine)
+				lfree(lp);*/
+			lp = lmalloc(li+1,LlP);
+			if(!lp)
+				STOPPROG(EALLOC);
+			*lp = CmdInp[1];//type of array
+			lp++;
+//printf("\n*%p %c %d %d %s\n",lp,*(lp-1),*(lp-2),li,CmdInp);
+			li = CmdInp[2];//name of array
+//			if(SYMISVAR(li))
+				Vars[TOVAR(li)] = (unsigned int)lp;
+		    return(0);
+		}
+		STOPPROG(EERROR);
+	    return(0);
 	case LET:
 		lp = findchar(CmdInp, '=');
-		li = CmdInp[1];
+		Gp = lp+1;
+		bi = ExpPars1();
+//		if(!SYMISVAR(li))
 		if(*(lp-1) == ')'){
 			*lp = 0;
-			gp = CmdInp+2;// '('
-		    li += ExpPars1();
-			if(li>'Z')
-				li = CmdInp[1];
+			Gp = CmdInp+2;// '('
+			li = ExpPars1();//array index
+			lp = (uint8_t *)Vars[TOVAR(CmdInp[1])];
+//printf("\n+%p %c %d %d %d\n",lp,*(lp-1),*(lp-2),li,bi);
+			if(*(lp-2) > (li+2)){//
+				switch(*(lp-1)){//type of array
+				case SIGNEDBYTE:
+					*(((char *)lp + li)) = bi;
+					break;
+				case UNSIGNEDBYTE:
+					*(((uint8_t *)lp + li)) = bi;
+					break;
+				default:
+//				case SIGNEDWORD:
+					*(((int *)lp + li)) = bi;
+					break;
+/*				case UNSIGNEDWORD:
+					*(((unsigned int *)lp + li)) = bi;
+					break;
+*/
+				}
+			}
+			else
+				STOPPROG(EERROR);//TODO
 		}
-		gp = lp+1;
-	    Vars[TOVAR(li)] = ExpPars1();
+		else
+		    Vars[TOVAR(CmdInp[1])] = bi;
 	    return(0);
 	case AT:
 		lp = findchar(CmdInp, ',');
@@ -43,10 +87,16 @@ uint8_t GoLine(void)
 			*lp = 0;
 		    li = ExpPars1();//x
 			if(li< LCDTWIDTH)
+#ifdef AVR
 				xt=li*LCDSYMWIDTH;
 			else
 				xt=(LCDTWIDTH-1)*LCDSYMWIDTH;
-			gp=lp+1;
+#else
+				xt=li;
+			else
+				xt=(LCDTWIDTH-1);
+#endif
+			Gp=lp+1;
 		    li = ExpPars1();//y
 			if(li< LCDTHEIGHT)
 				yt=li;
@@ -54,6 +104,9 @@ uint8_t GoLine(void)
 				yt=LCDTHEIGHT-1;
 #ifdef AVR
 			st7565_command(CMD_SET_DISP_START_LINE | ((LCDTHEIGHT-1)*8)+8);
+#else
+			printf( "%c[%d;%dH", 27, yt+1, xt+1 ); // установили курсор в позицию 
+ 			fflush( stdout ); 
 #endif
 		}
 	    return(0);
@@ -63,7 +116,7 @@ uint8_t GoLine(void)
 		{
 			*lp = 0;
 		    li = ExpPars1();//port
-			gp=lp+1;
+			Gp=lp+1;
 			out_port(li,ExpPars1());
 		}
 	    return(0);
@@ -76,18 +129,38 @@ uint8_t GoLine(void)
 		PrgLineP = FirstPrgLine;
 		return(1);
 	case INPUT:
-		li = CmdInp[1];
-		if(CmdInp[2] == '('){
-			gp = CmdInp+2;// '('
-		    li += ExpPars1();
-			if(li>'Z')
-				li = CmdInp[1];
-		}
+		lp = (uint8_t *)(Vars + TOVAR(CmdInp[1]));//pointer to var
+		Gp++;//to '(' or 0
+		if(*Gp == '(')
+			li = ExpPars1();//index
+		else
+			li = 255;
 		lgets(CmdInp);
 		if(CmdInp[0]==BREAK_KEY)
 			STOPPROG(EINTERUPT);
-		gp=CmdInp;
-	    Vars[TOVAR(li)] = ExpPars1();
+		Gp=CmdInp;
+		bi = ExpPars1();
+
+		if(li < MAXBMEMSIZE){
+			lp = (uint8_t *)(*((unsigned int *)lp));
+			if(*(lp-2) > (li+2)){//
+				switch(*(lp-1)){//type of array
+				case SIGNEDBYTE:
+					*(((char *)lp + li)) = bi;
+					break;
+				case UNSIGNEDBYTE:
+					*(((uint8_t *)lp + li)) = bi;
+					break;
+				default:
+					*(((int *)lp + li)) = bi;
+					break;
+				}
+			}
+			else
+				STOPPROG(EERROR);//TODO
+		}
+		else
+		    *lp = (int)bi;
 	    return(0);
 	case IF:
 	    lp = findchar(CmdInp, THEN);
@@ -102,14 +175,29 @@ uint8_t GoLine(void)
 		STOPPROG(EERROR);
 	    return(0);
 	case PRINT:
-		li = strlen(CmdInp);
-	    if(CmdInp[1] == '"'){
-		ReplaceChar(gp+1 ,'"', 0);
-		lputs((char *)(gp+1));
-	    }
-	    else{
-		lputint(ExpPars1());
-	    }
+		li = strlen((const char *)CmdInp);
+		while(Gp && *Gp){
+		    if(*Gp == '"'){
+				Gp++;
+				lp =findchar(Gp ,'"');
+				*lp = 0;
+				lputs((char *)(Gp));
+				Gp = lp+1;
+		    }
+			else{
+				if(*Gp == '$'){
+					Gp++;
+					lputchar(ExpPars1());	
+			    }
+				else
+					lputint(ExpPars1());
+		    }
+//printf("\n++ %s\n",Gp);
+			Gp =findchar(Gp ,',');
+			if(Gp)
+				Gp++;
+		}
+
 		if(CmdInp[li-1]!=';')
 		    lputchar('\n');
 	    return(0);
@@ -141,22 +229,22 @@ uint8_t GoLine(void)
 	    --SubStackP;
 	    PrgLineP = SubStack[SubStackP];
 	    return(1);
-	case FOR : /* "FOR" */
+	case FOR :
 	    lp = findchar(CmdInp, TO);
 	    if(lp){
-			*lp = 0; /* "TO" */
-			gp = CmdInp+ 3;
+			*lp = 0;
+			Gp = CmdInp+ 3;
 			li = TOVAR(CmdInp[1]);
 			if(li>LMAX)
 				STOPPROG(ELOPSOVF);
 			Vars[li] = ExpPars1();
-			gp = lp + 1;
+			Gp = lp + 1;
 			LoopVar[li].var_to = ExpPars1();
 			LoopVar[li].line_begin = PrgLineP->next;
 	    }else
 			STOPPROG(EERROR);
 	    return(0);
-	case NEXT: /* "NEXT" */
+	case NEXT:
 	    li = TOVAR(CmdInp[1]);
 	    if(++Vars[li] <= LoopVar[li].var_to){
 			PrgLineP = LoopVar[li].line_begin;

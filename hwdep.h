@@ -63,7 +63,7 @@ void spiswitch(uint8_t sel);
 
 #else
 
-#define DISPTH LCDTHEIGHT //display height for text mode 
+#define DISPTH 20 //display height for text mode 
 
 #define KBD_ENTER 0x0a
 

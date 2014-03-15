@@ -1,7 +1,7 @@
 /* AVRBASIC (c) 2014 olegvedi@gmail.com 
 */
 
-void serror(uint8_t ec,uint8_t mode)
+void serror(ETXTST ec,uint8_t mode)
 {
 	if(!mode){
 		gotocmdline();
@@ -16,27 +16,30 @@ int GetUsedMem(void)
 {
 	register int sz=0;
 	register uint8_t bsz;
-	register uint8_t *lp;
+//	register uint8_t *lp;
 
-	lp = PrgSps;
-	while(*lp){
-		bsz = (*lp & 0x7F);
-		if(!(*lp & 0x80))//not free block
+	LlP = PrgSps;
+	while(*LlP){
+		bsz = (*LlP & 0x7F);//block size
+		if(!(*LlP & 0x80))//not free block
 			sz +=bsz;
-		lp +=bsz;
+		LlP +=bsz;
 	}
 	return sz;
 }
 
-void *lmalloc(uint8_t size)//max size 126 bytes
+void *lmalloc(uint8_t size,void *from)//max size 126 bytes, search from address
 {
 	register int sz=0;
 	register uint8_t bsz;
 	register uint8_t *lp;
 
-	if(size > 126 || size == 0)
+	if(size > MAXBMEMSIZE || size == 0)
 		return NULL;
-	lp = PrgSps;
+	if(from)
+		lp =from;
+	else
+		lp = PrgSps;
 	while(*lp){
 		bsz = (*lp & 0x7F);
 		sz +=bsz;
@@ -55,6 +58,7 @@ void *lmalloc(uint8_t size)//max size 126 bytes
 		}
 		lp +=bsz;
 	}
+
 //printf("\n1MEM USE:%d,lp=%X:%X  req:%d\n",sz,lp,*lp,size);
 	if((sz+size) < MAXPRGSZ){
 		*lp= size+1;//mark as used
@@ -68,9 +72,9 @@ void lfree(void *pnt)
 {
 	register uint8_t *lp;
 
-	lp = (pnt-1);
 	if(pnt == NULL) return;
-	if(*(lp+*lp) == 0)//heap end
+	lp = (pnt-1);//pointer to block size
+	if(*(lp+*lp) == 0)//next block = heap end
 		*lp = 0;//move heap
 	else
 		*lp= *lp | 0x80;//mark as free
@@ -142,7 +146,7 @@ struct plines *AddEmpLine(uint8_t lsize)
 
 //printf("\nADD:%d %d\n",lsize,sizeof(struct plines));
     lsize += sizeof(struct plines);
-    if(lp = lmalloc(lsize))
+    if(lp = lmalloc(lsize, NULL))
     {
 	lp->next = NULL;
 	return lp;
@@ -222,7 +226,7 @@ uint8_t *findchar(uint8_t *str ,uint8_t ch)
     return 0;
 }
 
-uint8_t ReplaceChar(uint8_t *str ,uint8_t fchar, uint8_t rchar)
+uint8_t ReplaceChar(uint8_t *str ,uint8_t fchar, uint8_t rchar)//TODO
 {
     register uint8_t *lp,lc=0;
 
@@ -335,7 +339,7 @@ void print_ssym(uint8_t s)
 
 uint8_t print_code(uint8_t *line, uint8_t curspos)
 {
-    register uint8_t li,lc,lj,ch,ac=0;
+    register uint8_t li,lc,lj=0,ch,ac=0;
 
 	li=0;
 
@@ -420,14 +424,6 @@ void PrintCmdLine(uint8_t curspos)
 	}
 
 	print_code(CmdInp, curspos);
-/*uart_putchar('\r');
-uart_putchar('+');
-uart_putchar(':');
-uart_put_dec(ly);
-uart_putchar(':');
-uart_put_dec(yt);
-uart_putchar('\r');
-*/
 	if(ly != yt){
 		yt = ly;
 	}
@@ -500,17 +496,28 @@ up:
 #endif
 	lc = ch;
 	while(*cline && ch){
-//printf("\n--%c\n",*cline);
-		if(ch == MLTVAL){//str,mod-fn,exp(num,var)
-			if(lc != STRVAL && lc != CMDVAL && lc != EXPVAL){
+//printf("\n+ %c %c %c %c %c\n",ch,lc,*lpc,*cline,cursmode);
+
+		if(*(lpc-1) == MLTVAL && *cline == ','){
+			lpc--;
+			ch = *lpc;
+			lc = ch;
+			cline++;
+		}
+
+		if(ch == MLTVAL){//str,fn,exp(num,var,fn)
+			if(lc != STRVAL /*&& lc != CMDVAL*/ && lc != EXPVAL){
 				if(*cline == '"')//str
 					lc = STRVAL;
-				else if(SYMISCMD(*cline))//mod or fn
-					lc = CMDVAL;
-				else//expression 
+//				else if(SYMISCMD(*cline))//mod or fn
+//					lc = CMDVAL;
+				else{//expression 
+					if(*cline == '$')
+						cline++;
 					lc = EXPVAL;
+				}
 			}
-		} else if(ch == VARVAL){
+		} else if(ch == AVARVAL){
 			if(lc != EXPVAL){
 				if(*cline == '('){
 					lc = EXPVAL;
@@ -527,7 +534,8 @@ up:
 			}
 
 		} else	lc = ch;
-//printf("\n%c %c %c %c %c\n",ch,lc,*lpc,*cline,cursmode);
+//printf("\n* %c %c %c %c %c\n",ch,lc,*lpc,*cline,cursmode);
+
 		switch(lc){
 		case 255:
 			break;
@@ -541,14 +549,16 @@ up:
 				cursmode = OKVAL;
 				return(STRVAL);
 			break;
+		case AVARVAL://variable
 		case VARVAL://variable
 			if(!SYMISVAR(*cline))
 				goto err;
-//			lpc++;
+			if(lc != AVARVAL)
+				lpc++;
 			cursmode = okVAL;
 			break;
 		case EXPVAL://expression
-			if(SymIsExp(*cline)&& !(*cline == '=' && ch == VARVAL)){
+			if(SymIsExp(*cline)&& !(*cline == '=' && ch == AVARVAL)){
 				if(*cline == '(')
 					qc++;
 				else if(*cline == ')')

@@ -55,13 +55,6 @@ void init(void)
 	puts("\033[?25l");//hide cursor
 	puts("\033[2J");//hide cursor
 
-/*
-  printf( "%c[2J", 27 );           // очистили экран 
-   fflush( stdout ); 
-   printf( "%c[%d;%dH", 27, y, x ); // установили курсор в позицию 
- 
-      fflush( stdout ); 
-*/
 #endif
 }
 
@@ -143,7 +136,8 @@ register uint8_t cp,cf=1;
 uint8_t saveprg(const char *path)
 {
 FILE *fs;
-register uint8_t cp,cf=0;
+uint8_t cp,cf=0;
+int l=0;
 
 	fs = fopen(path, "wb");
 	if(fs)
@@ -152,16 +146,19 @@ register uint8_t cp,cf=0;
 		PrgLineP = FirstPrgLine;
 		while(PrgLineP){
 			PrepToSavPrgLine(PrgLineP);
-			fprintf(fs,"%s\n",CmdInp);
+			l += fprintf(fs,"%s\n",CmdInp);
 		    PrgLineP = PrgLineP->next;
 			cp++;
 		}
-		cf = fprintf(fs,"%c",END);
+		while(l< 2048){
+			fprintf(fs,"%c",END);
+			l++;
+		}
 		fclose(fs);
 		lputchar(' ');
 		lputint(cp);
 	}
-	return cf;
+	return 0;
 }
 #endif
 void lputchar(char ch)
@@ -241,7 +238,6 @@ uint8_t lgetchar(void)
 	register uint8_t ch;
 #ifdef AVR
 	ps2_clear_buffer();
-//	ps2_minit();
 #else
 	keymode = 0;
 #endif
@@ -297,14 +293,8 @@ void ClearScreen(void)//cls
 #ifdef AVR
 	clear_screen();
 #else
-	register uint8_t li;
-
-	li = 40;//TODO lines
-	while(li){
-		lputchar('\n');
-		li--;
-	}
-//printf("\033c");
+	printf( "%c[2J", 27 );
+	fflush( stdout ); 
 #endif
 }
 

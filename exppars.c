@@ -22,14 +22,14 @@ int ExpPars1(void)
 {
     int o = ExpPars2();
 
-    switch(*gp++){
+    switch(*Gp++){
     case '=':
 	return(o == ExpPars1());
 //	break ;
     case NESIGN:
 	return(o != ExpPars1());
     default:
-	gp--;
+	Gp--;
 	return(o);
     }
 }
@@ -38,14 +38,14 @@ int ExpPars2(void)
 {
     int o = ExpPars3();
 
-    switch(*gp++){
+    switch(*Gp++){
     case '<':
 	return(o < ExpPars2());
 //	break;
     case '>':
 	return(o > ExpPars2());
     default:
-	gp--;
+	Gp--;
 	return(o);
     }
 }
@@ -54,14 +54,14 @@ int ExpPars3(void)
 {
     int o = ExpPars4();
 
-    switch(*gp++){
+    switch(*Gp++){
     case LESIGN:
 	return(o <= ExpPars3());
 //	break ;
     case GESIGN:
 	return(o >= ExpPars3());
     default:
-	gp--;
+	Gp--;
 	return o;
     }
 }
@@ -70,14 +70,14 @@ int ExpPars4(void)
 {
     int o = ExpPars5();
 
-    switch(*gp++){
+    switch(*Gp++){
     case '+':
 	return(o+ExpPars4());
 //	break;
     case '-':
 	return(o-ExpPars4());
     default:
-	gp--;
+	Gp--;
 	return(o);
     }
 }
@@ -86,14 +86,14 @@ int ExpPars5(void)
 {
     int o = ExpPars6();
 
-    switch(*gp++){
+    switch(*Gp++){
     case '*':
 	return(o*ExpPars5());
 //	break ;
     case '/':
 	return(o/ExpPars5());
     default:
-	gp--;
+	Gp--;
 	return o;
     }
 }
@@ -101,38 +101,39 @@ int ExpPars5(void)
 int ExpPars6(void)
 {
     int o;
-	uint8_t t;
-//printf("\n*6*%d\n",*gp);
+	uint8_t *lp;
+	unsigned int t;
+//printf("\n*6*%s\n",Gp);
 
-	if(SYMISFN(*gp)){
-		switch(*gp){
+	if(SYMISFN(*Gp)){
+		switch(*Gp){
 		case IN:
-			gp++;
-			if(*gp == '('){
-				gp++;
+			Gp++;
+			if(*Gp == '('){
+				Gp++;
 				o=ExpPars1();
-				gp++;
+				Gp++;
 				return in_port(o);
 			}
 			else
 				return 0;
 			break;
 		case INKEY:
-			gp++;
+			Gp++;
 			o = pkey;
 			pkey = 0;
 			return o;
 			break;
 		case RND:
-			gp++;
-			if(*gp == '('){
-				gp++;
+			Gp++;
+			if(*Gp == '('){
+				Gp++;
 				o = ExpPars1();
 				if(o>0)
 					o = rand()/(SIZEOFVAR()/o);
 				else
 					o=0;
-				gp++;
+				Gp++;
 				return o;
 			}
 			else
@@ -142,30 +143,51 @@ int ExpPars6(void)
 			return 0;
 		}
 	}
-	else if(*gp == '-'){
-		gp++;
+	else if(*Gp == '-'){
+		Gp++;
 		return -ExpPars6();
 	}
-	else if(SYMISNUM(*gp))
-		return strtol((const char *)gp, &gp, 0);
-	else if(*gp == '('){
-		gp++;
+	else if(SYMISNUM(*Gp))
+		return strtol((const char *)Gp, (char **)(&Gp), 0);
+	else if(*Gp == '('){
+		Gp++;
 		o=ExpPars1();
-		gp++;
+		Gp++;
 		return o;
 	}
-	else if(SYMISVAR(*gp)){
-		t = *gp;
-		gp++;
-		if(*gp == '('){//array
-			gp++;
-			o=ExpPars1();
-			gp++;
-			if((o+t)<='Z')
-				return Vars[TOVAR(t+o)];
+	else if(SYMISVAR(*Gp)){
+//printf("\n*6*%s\n",Gp);
+		o = TOVAR(*Gp);
+		t = (unsigned int)Vars[o];//var value as pointer
+		Gp++;
+		if(*Gp == '(' && t > (unsigned int)LlP){//array and pointer to PrgSps
+			Gp++;
+			o = ExpPars1();//index
+			Gp++;
+			lp = (uint8_t *)t;
+//printf("\n*%p %u %u\n",lp,(unsigned int)(*(((unsigned int *)lp + o))),o);
+			if(*(lp-2) > (2+(uint8_t)o)){ //mem block size > index
+				switch(*(lp-1)){//type of array
+				case SIGNEDBYTE:
+					return *(((char *)lp + o));
+					break;
+				case UNSIGNEDBYTE:
+					return *(((uint8_t *)lp + o));
+					break;
+				default:
+//				case SIGNEDWORD:
+					return *(((int *)lp + o));
+					break;
+/*				case UNSIGNEDWORD:
+					return *(((unsigned int *)lp + o));
+					break;
+*/
+				}
+			}
+//			return Vars[o];
 		}
 //printf("\n+%c %d %d\n",t,TOVAR(t),Vars[TOVAR(t)]);
-		return Vars[TOVAR(t)];
+		return Vars[o];
 	}
 	else
 		return 0;

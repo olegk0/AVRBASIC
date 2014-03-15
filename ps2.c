@@ -231,14 +231,14 @@ uint8_t ps2buf_get(void)
 
 	if(keymode&CL_FLG){
 		if(keymode&SHIFT_FLG)
-			lp = &(Keymapr1[byte]);
+			lp = (uint8_t *)&(Keymapr1[byte]);
 		else
-			lp = &(Keymapr0[byte]);
+			lp = (uint8_t *)&(Keymapr0[byte]);
 	}else{
 		if(keymode&SHIFT_FLG)
-			lp = &(Keymap1[byte]);
+			lp = (uint8_t *)&(Keymap1[byte]);
 		else
-			lp = &(Keymap0[byte]);
+			lp = (uint8_t *)&(Keymap0[byte]);
 	}
 
 	byte = pgm_read_byte(lp);

@@ -54,7 +54,7 @@ int main(void)
 	TCCR1B = 1; //start timer1
 #endif
 	init();
-	lFputs(mtext);
+	lFputs((const uint8_t *)mtext);
 	lgetchar();
 #ifdef AVR
 	TCCR1B = 0; //stop timer1
@@ -72,11 +72,11 @@ int main(void)
 	switch((uint8_t)CmdInp[0]){
 	case RUN:
 	    ResetEnv();
-//programm loop
+		GetUsedMem();// store pointer to last mem block in *llp
 	    PrgLineP = FirstPrgLine;
 	    cf = 1;
 		pkey = 0;
-	    while(PrgLineP){
+	    while(PrgLineP){//programm loop
 			cp = lgetc();
 			if(cp)
 				pkey = cp;
@@ -94,12 +94,14 @@ int main(void)
 				break;
 			}
 		} /* end while line */
+		lputchar('\n');
 		lputint(CLine);
+		*LlP = 0; //restore mem top
 	    break;
 	case LIST:
 		ClearScreen();
 //		lputchar('\n');
-	    gp=CmdInp+1;
+	    Gp=CmdInp+1;
 		gy=0;
 		PrgLineP = GetPrgLine(ExpPars1(),1);// line with num >= 
 		while(PrgLineP){
@@ -108,6 +110,19 @@ int main(void)
 			cf=CheckOvrPrint();
 			if(cf== EINTERUPT) break;
 		    PrgLineP = PrgLineP->next;
+		}
+	    break;
+	case RENUM:
+	    Gp=CmdInp+1;
+		LlP =findchar(Gp ,',');
+		*LlP = 0;
+		PrgLineP = GetPrgLine(ExpPars1(),0);// line with num = 
+		Gp = LlP+1;
+		cp = ExpPars1();
+		if(PrgLineP && cp >0 && cp <= LNMAX){
+			strcpy((char *)CmdInp,(const char *)(PrgLineP->line));
+			DelPrgLine(PrgLineP->lnum);
+			LoadPrgLine(cp);
 		}
 	    break;
 	case HELP:
@@ -146,21 +161,21 @@ int main(void)
 				CmdInp[1] = 0;
 				cp = print_code(CmdInp, 255);
 				if(pmode==FNMODE){
-					gp = (uint8_t *)(table_fn[cp].templ);
+					Gp = (uint8_t *)(table_fn[cp].templ);
 					lputchar(' ');
 				}
 				else
-					gp = (uint8_t *)(table_cmd[cp].templ);
+					Gp = (uint8_t *)(table_cmd[cp].templ);
 #ifdef AVR
-				while((cp=pgm_read_byte(gp)) != 0){
+				while((cp=pgm_read_byte(Gp)) != 0){
 #else
-				while((cp=*gp) != 0){
+				while((cp=*Gp) != 0){
 #endif
 					if(SYMISEXTSYM(cp))
 					    print_ssym(cp);
 					else
 						lputchar(cp);
-					gp++;
+					Gp++;
 					lputchar(' ');
 				}
 				lputchar('\n');

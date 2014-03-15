@@ -106,7 +106,7 @@
 //**********************************************************
 						if(cp){//TODO  yet simple scheme without check 
 							CmdInp[cf-1] = cp;
-							gp =NULL;
+							Gp =NULL;
 							gy=0;
 #ifdef AVR
 							while(pkey=pgm_read_byte(&(table_fn[gy].tok))){
@@ -114,15 +114,15 @@
 							while(pkey=table_fn[gy].tok){
 #endif
 								if(pkey == cp){
-									gp = (uint8_t *)(table_fn[gy].templ);
+									Gp = (uint8_t *)(table_fn[gy].templ);
 									break;
 	  							}
 								gy++;
   							}
 #ifdef AVR
-							cp = pgm_read_byte(gp);
+							cp = pgm_read_byte(Gp);
 #else
-							cp = *gp;
+							cp = *Gp;
 #endif
 							if(cp){//fn with argument (for only one argument)
 								CmdInp[cf] = '(';
