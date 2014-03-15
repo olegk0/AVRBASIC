@@ -30,7 +30,7 @@ Restrictions:
 
 *For a loop must use variables A to J
 
-*Is possible address to variable as an array, for example: A(0) is equivalent to A, A(1) - B, B(2) - D, etc.
+*Arrays use the program memory
 
 *Not create new files on SD, can only overwrite old. Therefore it is necessary to prepare template files (example folder utils) and write them on a SD card.
 
