@@ -1,4 +1,4 @@
-AVRBASIC
+AVRBASIC v0.3
 ========
 
 BASIC interpreter for atmega328 (Arduino)
